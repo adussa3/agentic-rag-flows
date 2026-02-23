@@ -8,7 +8,7 @@ from chains.generation import generation_chain
 from graph.state import GraphState
 
 # Create Generate node
-def generation_node(state: GraphState) -> Dict[str, Any]:
+def generate_node(state: GraphState) -> Dict[str, Any]:
   print("---GENERATE---")
   question = state["question"]
   docs = state["documents"]

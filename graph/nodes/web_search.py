@@ -21,7 +21,7 @@ web_search_tool = TavilySearch(max_results=3)
 
 # NOTE: We execute the websearch node only AFTER we filter the documents with the grade_documents node
 # Therefore, we're not suppose to have any non-relevant documents
-def web_search(state: GraphState) -> Dict[str, Any]:
+def web_search_node(state: GraphState) -> Dict[str, Any]:
   print("---WEB SEARCH---")
   question = state["question"]
   documents = state["documents"]
