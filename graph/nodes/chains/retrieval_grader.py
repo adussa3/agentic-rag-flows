@@ -13,8 +13,8 @@ class GradeDocuments(BaseModel):
   binary_score: str = Field("Documents are relevant to the question, 'yes' or 'no'")
 
 # Initialize LLM
-# The defailt LLM for ChatOpenAI is GPT 3.5 (supports with_structured_output/function calling)
-llm = ChatOpenAI(temperature=0)
+# The LLM needs to support with_structured_output/function calling
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # with_structured_output converts the LLM's response to the GradeDocuments Pydantic model
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
