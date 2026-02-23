@@ -67,4 +67,4 @@ retriever = Chroma(
   collection_name="rag-chroma",
   persist_directory="./.chroma",
   embedding_function=OpenAIEmbeddings()
-).as_retriever
+).as_retriever()
