@@ -1,0 +1,16 @@
+
+.env
+
+.vscode/
+
+graph/nodes/chains/tests/__pycache__/
+
+.chroma/
+
+graph/nodes/chains/__pycache__/
+
+graph/__pycache__/
+
+graph/nodes/__pycache__/
+
+__pycache__/
