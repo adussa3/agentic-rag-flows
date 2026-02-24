@@ -46,4 +46,4 @@ def web_search_node(state: GraphState) -> Dict[str, Any]:
   return {"documents": documents}
 
 if __name__ == "__main__":
-  web_search(state={"question": "agent memory", "documents": None})
+  web_search_node(state={"question": "agent memory", "documents": None})
