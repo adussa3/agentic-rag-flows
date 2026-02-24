@@ -1,7 +1,7 @@
 # Any and Dict will be used for Type Hinting
 from typing import Any, Dict
 
-from chains.retrieval_grader import retrieval_grader_chain
+from .chains.retrieval_grader import retrieval_grader_chain
 
 # GraphState is the input for our node and what it'll update
 from graph.state import GraphState

@@ -2,7 +2,7 @@
 from typing import Any, Dict
 
 # Import Generation Chain
-from chains.generation import generation_chain
+from .chains.generation import generation_chain
 
 # import GraphState
 from graph.state import GraphState
