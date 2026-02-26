@@ -13,6 +13,8 @@ load_dotenv()
 
 from ..retrieval_grader import GradeDocuments, retrieval_grader_chain
 from ..generation import generation_chain
+from ..hallucination_grader import GradeHallucinations, hallucination_grader_chain
+from ..answer_grader import GradeAnswer, answer_grader_chain
 from ingestion import retriever
 
 def test_retrieval_grader_answer_yes() -> None:
@@ -41,3 +43,35 @@ def test_generation_chain() -> None:
   # Run the generation chain with the retrieved documents as the context
   response = generation_chain.invoke({"context": docs, "question": question})
   pprint(response)
+
+def test_hallucination_grader_answer_yes() -> None:
+  question = "agent memory"
+  docs = retriever.invoke(question);
+  generation = generation_chain.invoke({"context": docs, "question": question});
+
+  respone: GradeHallucinations = hallucination_grader_chain.invoke({"document": docs, "generation": generation})
+  assert respone.binary_score
+
+def test_hallucination_grader_answer_no() -> None:
+  question = "agent memory"
+  docs = retriever.invoke(question);
+  generation = "blah, blah, blah"
+
+  response: GradeHallucinations = hallucination_grader_chain.invoke({"document": docs, "generation": generation})
+  print(response)
+  assert not response.binary_score
+
+def test_answer_grader_yes() -> None:
+  question = "agent memory"
+  docs = retriever.invoke(question)
+  generation = generation_chain.invoke({"context": docs, "question": question})
+
+  response: GradeAnswer = answer_grader_chain.invoke({"question": question, "generation": generation})
+  assert response.binary_score
+
+def test_answer_grader_no() -> None:
+  question = "agent memory"
+  generation = "In order to make pizza, you first need to start with the dough"
+
+  response: GradeAnswer = answer_grader_chain.invoke({"question": question, "generation": generation})
+  assert response.binary_score
