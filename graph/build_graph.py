@@ -30,6 +30,10 @@ from graph.nodes import generate_node, grade_documents_node, retrieve_node, web_
 # Import our custom GraphState
 from graph.state import GraphState
 
+# Import hallucination_grader_chain and answer_grader_chain used in a conditional edge
+from graph.nodes.chains.hallucination_grader import GradeHallucinations, hallucination_grader_chain
+from graph.nodes.chains.answer_grader import GradeAnswer, answer_grader_chain
+
 ##############################
 # CONDITIONAL EDGE FUNCTIONS #
 ##############################
@@ -45,6 +49,28 @@ def decide_to_generate(state: GraphState):
   
   print("---DECISION: GENERATE---")
   return GENERATE
+
+def grade_generation_grounded_in_documents_and_question(state: GraphState) -> str:
+  print("---CHECK HALLUCINATIONS---")
+  question = state["question"]
+  docs = state["documents"]
+  generation = state["generation"]
+
+  hallucination_score: GradeHallucinations = hallucination_grader_chain.invoke({"document": docs, "generation": generation})
+  if hallucination_grade := hallucination_score.binary_score:
+     print("---DECISION: GENERATION IS GROUNDED IN DOCUMENTS---")
+  else:
+     print("---DECISION: GENERATION IS NOT GROUDED IN DOCUMENTS---")
+     return "not supported"
+
+  print("---GRADE GENERATION vs QUESTION---")
+  answer_score: GradeAnswer = answer_grader_chain.invoke({"question": question, "generation": generation})
+  if answer_grade := answer_score.binary_score:
+     print("--DECISION: GENERATION ADDRESSES QUESTION")
+     return "useful"
+  else:
+     print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
+     return "not useful"
 
 #########
 # GRAPH #
@@ -76,6 +102,17 @@ builder.add_conditional_edges(
   }
 )
 
+builder.add_conditional_edges(
+   GENERATE,
+   grade_generation_grounded_in_documents_and_question,
+   # The key strings is what will be displayed for the edges
+   {
+      "not supported": GENERATE,
+      "useful": END,
+      "not useful": WEB_SEARCH 
+   }
+)
+
 # Compile graph
 graph = builder.compile()
 
@@ -89,8 +126,8 @@ print(graph.get_graph().draw_mermaid())
 
 # This prints the graph visualization in the console using ascii characters
 # Note: you need to install Gandalf to view the graph visualization
-print(graph.get_graph().draw_ascii())
+# print(graph.get_graph().draw_ascii())
 
 # This saves the graph visualization as a png file
-with open("RAG.png", "wb") as f:
+with open("Self RAG.png", "wb") as f:
     f.write(graph.get_graph().draw_mermaid_png())
