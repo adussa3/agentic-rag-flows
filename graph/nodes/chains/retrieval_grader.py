@@ -5,6 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 # We use Pydantic's BaseModel and Field to create the object schemas to structure the output of the LLM's response
 # NOTE: We're prompting the LLM through the Field description!
 from pydantic import BaseModel, Field
+
+# Import LangChain OpenAI
 from langchain_openai import ChatOpenAI
 
 # Create Pydantic model
