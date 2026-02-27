@@ -30,9 +30,10 @@ from graph.nodes import generate_node, grade_documents_node, retrieve_node, web_
 # Import our custom GraphState
 from graph.state import GraphState
 
-# Import hallucination_grader_chain and answer_grader_chain used in a conditional edge
+# Import hallucination_grader_chain, answer_grader_chain, and question_router_chain used in a conditional edge
 from graph.nodes.chains.hallucination_grader import GradeHallucinations, hallucination_grader_chain
 from graph.nodes.chains.answer_grader import GradeAnswer, answer_grader_chain
+from graph.nodes.chains.router import RouteQuery, question_router_chain
 
 ##############################
 # CONDITIONAL EDGE FUNCTIONS #
@@ -58,19 +59,31 @@ def grade_generation_grounded_in_documents_and_question(state: GraphState) -> st
 
   hallucination_score: GradeHallucinations = hallucination_grader_chain.invoke({"document": docs, "generation": generation})
   if hallucination_grade := hallucination_score.binary_score:
-     print("---DECISION: GENERATION IS GROUNDED IN DOCUMENTS---")
+    print("---DECISION: GENERATION IS GROUNDED IN DOCUMENTS---")
   else:
-     print("---DECISION: GENERATION IS NOT GROUDED IN DOCUMENTS---")
-     return "not supported"
+    print("---DECISION: GENERATION IS NOT GROUDED IN DOCUMENTS---")
+    return "not supported"
 
   print("---GRADE GENERATION vs QUESTION---")
   answer_score: GradeAnswer = answer_grader_chain.invoke({"question": question, "generation": generation})
   if answer_grade := answer_score.binary_score:
-     print("--DECISION: GENERATION ADDRESSES QUESTION")
-     return "useful"
+    print("--DECISION: GENERATION ADDRESSES QUESTION")
+    return "useful"
   else:
-     print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
-     return "not useful"
+    print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
+    return "not useful"
+  
+def route_question(state: GraphState) -> str:
+  question = state["question"]
+  source: RouteQuery = question_router_chain.invoke({"question": question})
+     
+  if source.datasource == "websearch":
+    print("---ROUTE QUESTION TO WEB SEARCH---")
+    return WEB_SEARCH
+
+  print("---ROUTE QUESTION TO VECTOR STORE---")
+  return RETRIEVE
+
 
 #########
 # GRAPH #
@@ -83,9 +96,6 @@ builder.add_node(RETRIEVE, retrieve_node)
 builder.add_node(GRADE_DOCUMENTS, grade_documents_node)
 builder.add_node(WEB_SEARCH, web_search_node)
 builder.add_node(GENERATE, generate_node)
-
-# Entry Point
-builder.set_entry_point(RETRIEVE)
 
 # Edges
 builder.add_edge(RETRIEVE, GRADE_DOCUMENTS)
@@ -103,14 +113,26 @@ builder.add_conditional_edges(
 )
 
 builder.add_conditional_edges(
-   GENERATE,
-   grade_generation_grounded_in_documents_and_question,
-   # The key strings is what will be displayed for the edges
-   {
-      "not supported": GENERATE,
-      "useful": END,
-      "not useful": WEB_SEARCH 
-   }
+  GENERATE,
+  grade_generation_grounded_in_documents_and_question,
+  # The key strings is what will be displayed for the edges
+  {
+    "not supported": GENERATE,
+    "useful": END,
+    "not useful": WEB_SEARCH 
+  }
+)
+
+# Entry Point
+# builder.set_entry_point(RETRIEVE)
+
+# Conditional Entry Point - a conditional edge with the first node as the entry point
+builder.set_conditional_entry_point(
+  route_question,
+  {
+    WEB_SEARCH: WEB_SEARCH,
+    RETRIEVE: RETRIEVE
+  }
 )
 
 # Compile graph
@@ -129,5 +151,5 @@ print(graph.get_graph().draw_mermaid())
 # print(graph.get_graph().draw_ascii())
 
 # This saves the graph visualization as a png file
-with open("Self RAG.png", "wb") as f:
-    f.write(graph.get_graph().draw_mermaid_png())
+with open("Adaptive RAG.png", "wb") as f:
+  f.write(graph.get_graph().draw_mermaid_png())
