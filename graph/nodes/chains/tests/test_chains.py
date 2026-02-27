@@ -7,14 +7,11 @@
 # import pretty print
 from pprint import pprint
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from ..retrieval_grader import GradeDocuments, retrieval_grader_chain
 from ..generation import generation_chain
 from ..hallucination_grader import GradeHallucinations, hallucination_grader_chain
 from ..answer_grader import GradeAnswer, answer_grader_chain
+from ..router import RouteQuery, question_router_chain
 from ingestion import retriever
 
 def test_retrieval_grader_answer_yes() -> None:
@@ -75,3 +72,13 @@ def test_answer_grader_no() -> None:
 
   response: GradeAnswer = answer_grader_chain.invoke({"question": question, "generation": generation})
   assert response.binary_score
+
+def test_route_to_vectorstore() -> None:
+  question = "agent memory"
+  response: RouteQuery = question_router_chain.invoke({"question": question})
+  assert response.datasource == "vectorstore"
+
+def test_route_to_websearch() -> None:
+  question = "how to make pizza"
+  response: RouteQuery = question_router_chain.invoke({"question": "how to make pizza"})
+  assert response.datasource == "websearch"
