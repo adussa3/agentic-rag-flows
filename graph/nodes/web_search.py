@@ -24,7 +24,7 @@ web_search_tool = TavilySearch(max_results=3)
 def web_search_node(state: GraphState) -> Dict[str, Any]:
   print("---WEB SEARCH---")
   question = state["question"]
-  documents = state["documents"]
+  documents = state.get("documents", [])
 
   # We want to take the content of the search results and combine them into a LangChain Document
   tavily_results = web_search_tool.invoke({"query": question})["results"]
